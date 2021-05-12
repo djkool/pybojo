@@ -4,7 +4,7 @@
 #
 ##
 
-import pygame
+import pygame as pg
 from pygame.locals import *
 import logging
 from random import randint
@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 
 class LoadingState(GameState):
 
-    RECT_COLOR = pygame.Color(255, 255, 255)
+    RECT_COLOR = pg.Color(255, 255, 255)
 
     MAX_SPEED = 50
 
@@ -37,7 +37,7 @@ class LoadingState(GameState):
 
         # Initialize state properties
         #
-        self.rect = pygame.Rect(0, 0, 100, 100)
+        self.rect = pg.Rect(0, 0, 100, 100)
         self.rect.center = (self.gc.screen.get_width() // 2, self.gc.screen.get_height() // 2)
         self.rect_vel = (randint(-self.MAX_SPEED, self.MAX_SPEED), randint(-self.MAX_SPEED, self.MAX_SPEED))
 
@@ -51,7 +51,7 @@ class LoadingState(GameState):
         """Called during normal update/render period for this state
            to process it's input."""
 
-        for e in pygame.event.get():
+        for e in pg.event.get():
             if e.type == QUIT:
                 self.gc.quit()
 
@@ -60,7 +60,7 @@ class LoadingState(GameState):
         """Called during normal update/render period for this state
            to update it's local or game data."""
 
-        pygame.display.set_caption("%s : %f" % (self.__class__.__name__, self.gc.clock.get_fps()))
+        pg.display.set_caption(self.caption())
 
         dt = self.gc.time_step
         self.rect.move_ip(self.rect_vel[0] * dt, self.rect_vel[1] * dt)
@@ -74,12 +74,16 @@ class LoadingState(GameState):
         """Called during normal update/render period for this state
            to render it's data in a specific way."""
         self.gc.screen.fill((0,0,0))
-        pygame.draw.rect(self.gc.screen, self.RECT_COLOR, self.rect)
-        pygame.display.flip()
+        pg.draw.rect(self.gc.screen, self.RECT_COLOR, self.rect)
+        pg.display.flip()
 
 
     def leave(self):
         """Called whenever we switch from this state to another."""
         pass
+
+
+    def caption(self):
+        return "%s %s : %f" % (self.gc.caption(), self.__class__.__name__, self.gc.clock.get_fps())
 
 # end LoadingState

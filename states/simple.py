@@ -68,7 +68,7 @@ class SimpleState(GameState):
         """Called during normal update/render period for this state
            to update it's local or game data."""
 
-        pg.display.set_caption("%s : %f" % (self.__class__.__name__, self.gc.clock.get_fps()))
+        pg.display.set_caption(self.caption())
 
         dt = self.gc.time_step
         self.player.update(dt)
@@ -87,5 +87,9 @@ class SimpleState(GameState):
     def leave(self):
         """Called whenever we switch from this state to another."""
         pass
+
+
+    def caption(self):
+        return "%s %s : %f" % (self.gc.caption(), self.__class__.__name__, self.gc.clock.get_fps())
 
 # end SimpleState

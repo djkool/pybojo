@@ -10,10 +10,14 @@
 import os, sys
 from argparse import ArgumentParser
 from configparser import ConfigParser
+from importlib import import_module
+from traceback import print_exception
 import logging
-import pygame
+import pygame as pg
 
 from djlib.game import GameClass
+
+import paths
 
 log = logging.getLogger(__name__)
 
@@ -48,30 +52,31 @@ class PectinGameApp(GameClass):
         GameClass.initialize(self)
 
         # Init pygame
-        pygame.init()
-        pygame.font.init()
+        pg.init()
+        pg.font.init()
 
         screen_size = (self.config.getint('default', 'screen_width', fallback=self.SCREEN_SIZE[0]),
                        self.config.getint('default', 'screen_height', fallback=self.SCREEN_SIZE[1]))
         fs = self.config.getint('default', 'fullscreen', fallback=1)
-        self.screen = pygame.display.set_mode(screen_size, pygame.FULLSCREEN | pygame.HWSURFACE if fs else 0)
+        self.screen = pg.display.set_mode(screen_size, pg.FULLSCREEN | pg.HWSURFACE if fs else 0)
 
-        self.clock = pygame.time.Clock()
+        self.clock = pg.time.Clock()
 
 
     def update(self):
         # Must be done before GameClass.update() so it can
         # be used by GameState this frame
         self.clock.tick(self.DESIRED_FPS)
-        self.time = pygame.time.get_ticks()
+        self.time = pg.time.get_ticks()
         self.time_step = self.clock.get_time()/1000.0
 
         GameClass.update(self)
 
     def shutdown(self):
         GameClass.shutdown(self)
-        pygame.font.quit()
-        pygame.quit()
+
+        pg.font.quit()
+        pg.quit()
 
         logging.shutdown()
 
@@ -79,7 +84,8 @@ class PectinGameApp(GameClass):
         # tell systems to shut down
         self.running = False
 
-# end PectinGameApp
+    def caption(self):
+        return PectinGameApp.APP_NAME
 
 _APP_CLASS = PectinGameApp
 
@@ -89,6 +95,7 @@ _APP_CLASS = PectinGameApp
 def startApp(initial_state, *args, **kargs):
     parser = ArgumentParser(description='Starter sugar for pygame projects.')
     parser.add_argument('-c', '--config', default='default.cfg', help='Specify configuration file.')
+    parser.add_argument('-s', '--initial-state', default=None, help="Specify initial starting state.")
     parser.add_argument('-w', '--windowed', action='store_true', help='Start in windowed mode.')
 
     args = parser.parse_args()
@@ -128,16 +135,28 @@ def startApp(initial_state, *args, **kargs):
         log.debug("Starting in windowed mode.")
         config.set('default', 'fullscreen', '0')
 
+    paths.loadFromConfig(config)
+
     # Initialize App
     log.debug("Initializing %s", _APP_CLASS.__name__)
     app = _APP_CLASS(config)
     app.initialize()
 
-    # Start first state
+    # Check config for initial_state overrides
     if not initial_state:
-        # Avoid importing of Demo/Capture state if an initial state is already provided.
-        from states.simple import SimpleState
-        initial_state = SimpleState
+        stateclass_name = args.initial_state if args.initial_state else config.get('default', 'initial_state', fallback="loading.LoadingState")
+        if stateclass_name:
+            try:
+                # Attempt to import the specified state module
+                sc_split = stateclass_name.rindex('.')
+                if sc_split != -1:
+                    mod_name = paths.STATES_PATH.lstrip("./") + "." + stateclass_name[:sc_split]
+                    mod = import_module(mod_name)
+                    initial_state = mod.__dict__.get(stateclass_name[sc_split+1:])
+            except Exception as e:
+                log.error("Config contains invalid initial state module.class: %s", stateclass_name)
+                log.exception(e)
+
     log.debug("Entering initial state: %s", initial_state.__name__)
     app.changeState(initial_state)
 
