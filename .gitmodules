@@ -1,0 +1,3 @@
+[submodule "djlib"]
+	path = djlib
+	url = git@github.com:djkool/djlib.git
