@@ -26,11 +26,11 @@ DTIME_FORMAT = "%Y-%m-%d_%H.%M.%S"
 
 
 ###############################################################################
-##  PectinGameApp
+##  BojoApp
 
-class PectinGameApp(GameClass):
+class BojoApp(GameClass):
 
-    APP_NAME = "Game Pectin"
+    APP_NAME = "Bojo Cards"
 
     def __init__(self, config=None):
         GameClass.__init__(self)
@@ -85,9 +85,9 @@ class PectinGameApp(GameClass):
         self.running = False
 
     def caption(self):
-        return PectinGameApp.APP_NAME
+        return self.APP_NAME
 
-_APP_CLASS = PectinGameApp
+_APP_CLASS = BojoApp
 
 
 # Keep app initialization code out of __main__ so
